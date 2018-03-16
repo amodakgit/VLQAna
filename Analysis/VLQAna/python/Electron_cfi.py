@@ -1,0 +1,28 @@
+import FWCore.ParameterSet.Config as cms
+
+defaultElectronParameters = cms.PSet(
+      elChargeLabel            = cms.InputTag("electrons", "elCharge"),
+      elD0Label                = cms.InputTag("electrons", "elDxy"),
+      elDzLabel                = cms.InputTag("electrons", "elDz"),
+      elELabel                 = cms.InputTag("electrons", "elE"),
+      elEtaLabel               = cms.InputTag("electrons", "elEta"),
+      elHoELabel               = cms.InputTag("electrons", "elHoE"),
+      elIso03Label             = cms.InputTag("electrons", "elIso03"),
+      elKeyLabel               = cms.InputTag("electrons", "elKey"),
+                                     #  elMassLabel              = cms.InputTag("electrons", "elMass"),
+      elPhiLabel               = cms.InputTag("electrons", "elPhi"),
+      elPtLabel                = cms.InputTag("electrons", "elPt"),
+                                     #  elYLabel                 = cms.InputTag("electrons", "elY"),
+      eldEtaInLabel            = cms.InputTag("electrons", "eldEtaInSeed"),
+      eldPhiInLabel            = cms.InputTag("electrons", "eldPhiIn"),
+      elfull5x5sieeLabel       = cms.InputTag("electrons", "elfull5x5siee"),
+      elhasMatchedConVetoLabel = cms.InputTag("electrons", "elhasMatchedConVeto"),
+      elvidLooseLabel          = cms.InputTag("electrons", "elvidLoose"),
+      elvidMediumLabel         = cms.InputTag("electrons", "elvidMedium"),
+      elvidTightLabel          = cms.InputTag("electrons", "elvidTight"),
+      elvidVetoLabel           = cms.InputTag("electrons", "elvidVeto"),
+      elvidHEEPLabel           = cms.InputTag("electrons", "elvidHEEP"),
+      elmissHitsLabel          = cms.InputTag("electrons", "elmissHits"),
+      elooEmooPLabel           = cms.InputTag("electrons", "elooEmooP"),
+      elscEtaLabel             = cms.InputTag("electrons", "elSCEta"),
+    )

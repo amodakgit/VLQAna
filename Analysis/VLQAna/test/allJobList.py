@@ -1,0 +1,80 @@
+#! /bin/python
+
+def job_list(isData):
+    if isData:
+        jobList = [
+                   ['/SingleMuon/oiorio-Run2016B-03Feb2017_ver2-v2_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleMuon_LQskim3_B_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016C-03Feb2017-v1_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleMuon_LQskim3_C_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016D-03Feb2017-v1_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleMuon_LQskim3_D_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016E-03Feb2017-v1_B2GAnaFW_80X_V3p1-772b8342a7e97379f340082700062d1c/USER', 'SingleMuon_LQskim3_E_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016F-03Feb2017-v1_B2GAnaFW_80X_V3p1-772b8342a7e97379f340082700062d1c/USER', 'SingleMuon_LQskim3_F_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016G-03Feb2017-v1_B2GAnaFW_80X_V3p1-70f39d6d09d0b73bfa14078f288a0ee4/USER', 'SingleMuon_LQskim3_G_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016H-03Feb2017_ver2-v1_B2GAnaFW_80X_V3p1-426fcf68e8d774085dec299deacebe2a/USER', 'SingleMuon_LQskim3_H2_', '25', ''],
+                   ['/SingleMuon/oiorio-Run2016H-03Feb2017_ver3-v1_B2GAnaFW_80X_V3p1-426fcf68e8d774085dec299deacebe2a/USER', 'SingleMuon_LQskim3_H3_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016B-03Feb2017_ver2-v2_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleElectron_new18v2_B_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016C-03Feb2017-v1_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleElectron_new18v2_C_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016D-03Feb2017-v1_B2GAnaFW_80X_V3p1-d397a966867907ea02661d70db4cdb9f/USER', 'SingleElectron_new18v2_D_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016E-03Feb2017-v1_B2GAnaFW_80X_V3p1-772b8342a7e97379f340082700062d1c/USER', 'SingleElectron_new18v2_E_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016F-03Feb2017-v1_B2GAnaFW_80X_V3p1-772b8342a7e97379f340082700062d1c/USER', 'SingleElectron_new18v2_F_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016G-03Feb2017-v1_B2GAnaFW_80X_V3p1-70f39d6d09d0b73bfa14078f288a0ee4/USER', 'SingleElectron_new18v2_G_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016H-03Feb2017_ver2-v1_B2GAnaFW_80X_V3p1-426fcf68e8d774085dec299deacebe2a/USER', 'SingleElectron_new18v2_H2_', '25', ''],
+                   #['/SingleElectron/oiorio-Run2016H-03Feb2017_ver3-v1_B2GAnaFW_80X_V3p1-426fcf68e8d774085dec299deacebe2a/USER', 'SingleElectron_new18v2_H3_', '25', ''],
+                   ]
+
+        return jobList
+    else:
+        jobList = [
+                   #['/WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT100_200', '2',''],
+		   #['/WJetsToLNu_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext2-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT200_400', '2', ''],
+		   #['/WJetsToLNu_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT400_600', '2', ''],
+		   #['/WJetsToLNu_HT-600To800_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT600_800', '2', ''],
+		   #['/WJetsToLNu_HT-800To1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT800_1200', '2', ''],
+		   #['/WJetsToLNu_HT-1200To2500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT1200_2500', '2', ''],
+		   #['/WJetsToLNu_HT-2500ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'WJets_LQ4_HT2500_inf', '2', ''],
+		   ['/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'TTJets_LQ4_TopPt', '1', ''],
+		   #['/ST_t-channel_antitop_4f_inclusiveDecays_TuneCUETP8M2T4_13TeV-powhegV2-madspin/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'ST_LQ4_t-channel_antiTOP', '1', ''],
+		   #['/ST_t-channel_top_4f_inclusiveDecays_TuneCUETP8M2T4_13TeV-powhegV2-madspin/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'ST_LQ4_t-channel_TOP', '1', ''],
+		   #['/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M2T4/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'ST_LQ4_tW_antiTOP', '1', ''],
+		   #['/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M2T4/skinnari-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'ST_LQ4_tW_TOP', '1', ''],
+		   #['/DYJetsToLL_Pt-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_ext5_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'DY_LQ4Pt-100-250_ext5', '3', ''],
+		   #['/DYJetsToLL_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_ext5_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'DY_LQ4Pt-250-400_ext5', '3', ''],
+		   #['/DYJetsToLL_Pt-400To650_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_ext1_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'DY_LQ4Pt-400-650_ext1', '3', ''],
+		   #['/DYJetsToLL_Pt-650ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_ext1_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'DY_LQ4Pt-650-Inf_ext1', '3', ''],
+                   #['/TprimeBToBW_M-700_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-700', '1', ''],
+                   #['/TprimeBToBW_M-800_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-800', '1', ''],
+                   #['/TprimeBToBW_M-900_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-900', '1', ''],
+                   #['/TprimeBToBW_M-1000_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1000', '1', ''],
+                   #['/TprimeBToBW_M-1100_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1100', '1', ''],
+                   #['/TprimeBToBW_M-1200_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1200', '1', ''],
+                   #['/TprimeBToBW_M-1300_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1300', '1', ''],
+                   #['/TprimeBToBW_M-1400_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1400', '1', ''],
+                   #['/TprimeBToBW_M-1500_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1500', '1', ''],
+                   #['/TprimeBToBW_M-1600_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1600', '1', ''],
+                   #['/TprimeBToBW_M-1700_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1700', '1', ''],
+                   #['/TprimeBToBW_M-1800_TuneCUETP8M1_13TeV-madgraph-pythia8/vorobiev-B2GAnaFW_RunIISpring16MiniAODv2_25ns_v80x_v2p4-bfea8033ab2d179bbb8e0faf6e2dc0cf/USER', 'TprimeBToBW_LQ4_M-1800_test', '1', ''],
+		   #['/QCD_Pt_170to300_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p04-6b29e1707fe76ab19c1ba543e7f6f24b/USER', 'QCD_LQ4_Pt-170-300', '5', ''],
+		   #['/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-300-470', '5', ''],
+		   #['/QCD_Pt_470to600_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_backup_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p04-6b29e1707fe76ab19c1ba543e7f6f24b/USER', 'QCD_LQ4_Pt-470-600', '5', ''],
+		   #['/QCD_Pt_600to800_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_backup_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-600-800', '5', ''],
+		   #['/QCD_Pt_800to1000_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-800-1000', '5', ''],
+		   #['/QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-1000-1400', '5', ''],
+		   #['/QCD_Pt_1400to1800_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-1400-1800', '5', ''],
+		   #['/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-1800-2400', '5', ''],
+		   #['/QCD_Pt_2400to3200_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-2400-3200', '5', ''],
+		   #['/QCD_Pt_3200toInf_TuneCUETP8M1_13TeV_pythia8/algomez-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v3_B2GAnaFW_80X_V2p4-9705383e86c3aabba8a30865b5958dd7/USER', 'QCD_LQ4_Pt-3200-Inf', '5', ''],
+		   #['/WWTo1L1Nu2Q_13TeV_amcatnloFXFX_madspin_pythia8/oiorio-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V3p2_June-abe82725a22c385c5abbaab3e6182693/USER', 'WWTo1L2Q_LQ4', '5', ''],
+		   #['/WZTo1L1Nu2Q_13TeV_amcatnloFXFX_madspin_pythia8/oiorio-RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v3_B2GAnaFW_80X_V3p2_June-abe82725a22c385c5abbaab3e6182693/USER', 'WZTo1L2Q_LQ4', '5', ''],
+		]
+        return jobList
+
+
+
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
