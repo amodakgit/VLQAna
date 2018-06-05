@@ -15,5 +15,5 @@ looseElectronMakerParameters = cms.PSet(
     elidtype = cms.string("LOOSE"),
     elPtMin = cms.double(15),
     elPtMax = cms.double(10000),
-    elAbsEtaMax = cms.double(2.5),
+    elAbsEtaMax = cms.double(2.1),
     )

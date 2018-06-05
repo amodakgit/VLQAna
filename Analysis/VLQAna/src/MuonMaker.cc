@@ -110,9 +110,9 @@ void MuonMaker::operator () (edm::Event& evt, vlq::MuonCollection& muons) {
         if (type_ == LOOSE && (h_muIsLooseMuon.product())->at(imu) > 0) passMuId = true ;
         else if (type_ == TIGHT && (h_muIsTightMuon.product())->at(imu) > 0) passMuId = true ;
         
-        if ( muPt > muPtMin_ && muPt < muPtMax_ && muAbsEta < muAbsEtaMax_
+        if ( muPt >= muPtMin_ && muPt < muPtMax_ && muAbsEta <= muAbsEtaMax_
             && passMuId
-            && muIso > muIsoMin_ && muIso < muIsoMax_
+            && muIso >= muIsoMin_ && muIso < muIsoMax_
             ) {
             vlq::Muon muon ;
             TLorentzVector  muP4;

@@ -255,7 +255,7 @@ bool EventCleaner::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
       double vtxRho     = (h_vtxRho.product())->at(ipv) ;
       double vtxZ       = (h_vtxZ.product())->at(ipv) ;
       double vtxNdf     = (h_vtxNdf.product())->at(ipv) ;
-      if ( abs(vtxRho) < 2. && abs(vtxZ) <= 24. && vtxNdf > 4 ) ++npv ;
+      if ( fabs(vtxRho) < 2. && abs(vtxZ) <= 24. && vtxNdf > 4 ) ++npv ;
     }
     
     if ( npv < 1 ) return false;

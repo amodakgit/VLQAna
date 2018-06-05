@@ -5,10 +5,9 @@ from Analysis.VLQAna.Muon_cfi import *
 defaultMuonMakerParameters = cms.PSet(
     defaultMuonParameters, 
     muidtype = cms.string("TIGHT"),
-    muPtMin = cms.double(60),
+    muPtMin = cms.double(40),
     muPtMax = cms.double(10000),
-    #muAbsEtaMax = cms.double(2.1),
-    muAbsEtaMax = cms.double(2.4),
+    muAbsEtaMax = cms.double(2.1),
     muIsoMin = cms.double(0.0),
     muIsoMax = cms.double(0.15),
     )
@@ -16,7 +15,7 @@ defaultMuonMakerParameters = cms.PSet(
 skimMuonMakerParameters = cms.PSet(
     defaultMuonParameters, 
     muidtype = cms.string("TIGHT"),
-    muPtMin = cms.double(60),
+    muPtMin = cms.double(40),
     muPtMax = cms.double(10000),
     muAbsEtaMax = cms.double(2.4),
     muIsoMin = cms.double(0.0),
@@ -28,7 +27,7 @@ looseMuonMakerParameters = cms.PSet(
     muidtype = cms.string("LOOSE"),
     muPtMin = cms.double(15),
     muPtMax = cms.double(10000),
-    muAbsEtaMax = cms.double(2.4),
+    muAbsEtaMax = cms.double(2.1),
     muIsoMin = cms.double(0.0),
     muIsoMax = cms.double(0.15),
     )

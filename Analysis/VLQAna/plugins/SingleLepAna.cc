@@ -85,6 +85,9 @@ private:
     
     // ----------member data ---------------------------
     edm::EDGetTokenT<string>   t_evttype         ;
+    edm::EDGetTokenT<int>      t_evtno           ;
+    edm::EDGetTokenT<int>      t_lumi            ;
+    edm::EDGetTokenT<int>      t_runno           ;
     edm::EDGetTokenT<double>   t_evtwtGen        ;
     edm::EDGetTokenT<double>   t_evtwtPV         ;
     edm::EDGetTokenT<double>   t_evtwtPVLow      ;
@@ -135,12 +138,14 @@ private:
     std::unique_ptr<BTagSFUtils> btagsfutils_    ;
     vlq::ElectronCollection signalElectrons      ;
     vlq::MuonCollection signalMuons              ;
+    vlq::MuonCollection skimMuons                ;
     vlq::JetCollection goodAK4Jets               ;
     vlq::JetCollection goodAK8Jets               ;
     vlq::MetCollection goodMet                   ;
     edm::ParameterSet signalSelection_           ;
     edm::ParameterSet wjetSelection_             ;
     edm::ParameterSet ttbarSelection_            ;
+    edm::ParameterSet crSelection_               ;
 };
 
 using namespace std;
@@ -148,6 +153,9 @@ using namespace std;
 // constructors and destructor
 SingleLepAna::SingleLepAna(const edm::ParameterSet& iConfig) :
 t_evttype               (consumes<string> (iConfig.getParameter<edm::InputTag>("evttype"))),
+t_evtno                 (consumes<int> (iConfig.getParameter<edm::InputTag>("evtno"))),
+t_lumi                  (consumes<int> (iConfig.getParameter<edm::InputTag>("lumi"))),
+t_runno                 (consumes<int> (iConfig.getParameter<edm::InputTag>("runno"))),
 t_evtwtGen              (consumes<double> (iConfig.getParameter<edm::InputTag>("evtwtGen"))),
 t_evtwtPV               (consumes<double>  (iConfig.getParameter<edm::InputTag>("evtwtPV"))),
 t_evtwtPVLow            (consumes<double>  (iConfig.getParameter<edm::InputTag>("evtwtPVLow"))),
@@ -195,7 +203,8 @@ btageffmap_             (iConfig.getParameter<std::string>      ("btageffmap")),
 btagsfutils_            (new BTagSFUtils(fnamebtagSF_,BTagEntry::OP_MEDIUM,20., 1000., 20., 1000., 20., 1000., btageffmap_)),
 signalSelection_        (iConfig.getParameter<edm::ParameterSet> ("signalSelection")),
 wjetSelection_          (iConfig.getParameter<edm::ParameterSet> ("wjetSelection")),
-ttbarSelection_         (iConfig.getParameter<edm::ParameterSet> ("ttbarSelection"))
+ttbarSelection_         (iConfig.getParameter<edm::ParameterSet> ("ttbarSelection")),
+crSelection_            (iConfig.getParameter<edm::ParameterSet> ("crSelection"))
 {
     cout <<"constructor finished" << endl;
 }
@@ -210,12 +219,16 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
     
     signalElectrons.clear();
     signalMuons.clear();
+    skimMuons.clear();
     goodMet.clear();
     goodAK4Jets.clear();
     goodAK8Jets.clear();
     
     
     Handle<string>   h_evttype          ; evt.getByToken(t_evttype        , h_evttype     ) ;
+    Handle<int>      h_evtno            ; evt.getByToken(t_evtno        , h_evtno     ) ;
+    Handle<int>      h_lumi             ; evt.getByToken(t_lumi        , h_lumi     ) ;
+    Handle<int>      h_runno             ; evt.getByToken(t_runno        , h_runno     ) ;
     Handle<double>   h_evtwtGen         ; evt.getByToken(t_evtwtGen       , h_evtwtGen    ) ;
     Handle<double>   h_evtwtPV          ; evt.getByToken(t_evtwtPV        , h_evtwtPV     ) ;
     Handle<double>   h_evtwtPVLow       ; evt.getByToken(t_evtwtPVLow     , h_evtwtPVLow  ) ;
@@ -240,7 +253,7 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
     
     //// Single lepton analysis
     
-     vlq::MuonCollection looseMuons, skimMuons;
+    vlq::MuonCollection looseMuons;
     muonmakerloose (evt, looseMuons) ;
     muonmakerskim  (evt, skimMuons) ;
     muonmaker(evt, signalMuons) ;
@@ -254,14 +267,15 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
     
 
     CandidateCleaner cleanjets(0.4);
+    //cleanjets(goodAK4Jets, skimMuons);
     cleanjets(goodAK4Jets, signalMuons);
-    //cleanjets(goodAK4Jets, signalElectrons);
+    cleanjets(goodAK4Jets, signalElectrons);
     
     vlq::JetCollection goodBTaggedAK4Jets;
     jetAK4BTaggedmaker(evt, goodBTaggedAK4Jets) ;
     
     cleanjets(goodBTaggedAK4Jets, signalMuons);
-    //cleanjets(goodBTaggedAK4Jets, signalElectrons);
+    cleanjets(goodBTaggedAK4Jets, signalElectrons);
     
     metmaker(evt, goodMet) ;
     
@@ -336,78 +350,9 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
         }
     }
     
-    
-    
-    //This part of the code for Abdollah's LeptoQuark analysis, remove this later
-    //Start
-    if (true){
-      //Skim Here:
-      const bool hltflag(*h_hltdecision_mu.product());
-      TLorentzVector met_p4 = goodMet.at(0).getP4();
-      bool skim = false;
-      TLorentzVector jet_p4, slep_p4;
-      if (skimMuons.size() > 0        &&
-          goodAK4Jets.size() > 0         &&
-          met_p4.Pt() > 100              
-	  ){
-        jet_p4 = goodAK4Jets.at(0).getP4();
-        slep_p4 = skimMuons.at(0).getP4();
-        double dr = jet_p4.DeltaR(slep_p4);
-        if (slep_p4.Pt() > 60 && fabs(slep_p4.Eta()) < 2.4 && jet_p4.Pt() > 100 && fabs(jet_p4.Eta()) < 3.0 && dr > 0.5) skim = true;        
-      };
-
-      double mass = (slep_p4 + jet_p4).M();
-      if (skim) h1_["mass_skim_LQ"]->Fill(mass, evtwt);
-
-      for (unsigned int i = 0; i < goodAK4Jets.size(); i++){
-        jet_p4 = goodAK4Jets.at(i).getP4();
-        if (jet_p4.Pt() > 60 && fabs(jet_p4.Eta() < 2.4)) break;//take 1st one
-        else skim = false; 
-      }
-
-      if (skim && hltflag && signalMuons.size() > 0){
-
-        TLorentzVector lep_p4 = signalMuons.at(0).getP4();
-        double mt = TMath::Sqrt( 2*lep_p4.Pt() * met_p4.Pt() * ( 1 - TMath::Cos(lep_p4.DeltaPhi(met_p4) ) ) );
-        double drlj = jet_p4.DeltaPhi(lep_p4);
-        double dphijmet = jet_p4.DeltaPhi(met_p4);
-        double dphilmet = lep_p4.DeltaPhi(met_p4);
-        double d0 = signalMuons.at(0).getDxy();
-        double dz = signalMuons.at(0).getDz();
-
-        double zMassveto = true;
-        if (looseMuons.size() > 1){
-          TLorentzVector looseMu1_p4 = looseMuons.at(0).getP4();
-          TLorentzVector looseMu2_p4 = looseMuons.at(1).getP4();
-	  double Mu1Charge = looseMuons.at(0).getCharge();
-	  double Mu2Charge = looseMuons.at(1).getCharge();
-          if (looseMu1_p4.Pt() > 60 && looseMu2_p4.Pt() > 15 && ((Mu1Charge + Mu2Charge) == 0) && 
-              (looseMu1_p4 + looseMu2_p4).M() > 80 && 
-              (looseMu1_p4 + looseMu2_p4).M() < 100
-	     ) zMassveto = false;
-        }
-        if (jet_p4.Pt() > 100 && fabs(jet_p4.Eta()) < 2.4 && drlj > 0.5 && fabs(dphijmet) > 0.5 && 
-            fabs(dphilmet) > 0.5 && mt > 500 && fabs(d0) < 0.045 && fabs(dz) < 0.2){
-          double massLQ = (lep_p4 + jet_p4).M();
-          h1_["mass_noveto_LQ"]->Fill(massLQ, evtwt);
-        }
-        if (jet_p4.Pt() > 100 && fabs(jet_p4.Eta()) < 2.4 && zMassveto && drlj > 0.5 && fabs(dphijmet) > 0.5 && 
-            fabs(dphilmet) > 0.5 && mt > 500 && fabs(d0) < 0.045 && fabs(dz) < 0.2 && looseElectrons.size() == 0
-            && goodBTaggedAK4Jets.size() == 0){
-          double massLQ = (lep_p4 + jet_p4).M();
-          h1_["mass_LQ"]->Fill(massLQ, evtwt);
-          h1_["leppt_LQ"]->Fill(lep_p4.Pt(), evtwt);
-          h1_["qpt_LQ"]->Fill(jet_p4.Pt(), evtwt);
-          h1_["lepeta_LQ"]->Fill(lep_p4.Eta(), evtwt);
-          h1_["qeta_LQ"]->Fill(jet_p4.Eta(), evtwt);
-          h1_["lepphi_LQ"]->Fill(lep_p4.Phi(), evtwt);
-          h1_["qphi_LQ"]->Fill(jet_p4.Phi(), evtwt);
-          h1_["mt_LQ"]->Fill(mt, evtwt);
-          h1_["met_LQ"]->Fill(met_p4.Pt(), evtwt);
-        }
-      }//end pass
-    }
-    //End
+    //unsigned int evtno = abs(*h_evtno.product());
+    //unsigned int lumi = abs(*h_lumi.product());
+    //unsigned int run = abs(*h_runno.product());
 
     if( (signalElectrons.size() + signalMuons.size()) == 1 ){
         
@@ -493,15 +438,18 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
         TLorentzVector met_p4 = goodMet.at(0).getP4();
         double mt = TMath::Sqrt( 2*wbana_lep_p4.Pt() * met_p4.Pt() * ( 1 - TMath::Cos(wbana_lep_p4.DeltaPhi(met_p4) ) ) );
         
-        double st = 0, st_v2 = 0, mass = 0, mass_v2 = 0, dphi = 999;
+        double st = 0, st_v2 = 0, st_nomet = 0, mass = 0, mass_v2 = 0, dphi = 999, dphi_metjet= 999, dphi_metlep = 999, angle_MuZ_Jet = 999, angle_MuJet_Met = 999;
         if(goodAK4Jets.size() > 0){
             
             // define st obtained using ak8
             st      = met_p4.Pt() + leading_ak8jet_p4.Pt() + wbana_lep_p4.Pt();
+
+            // define st obtained using ak8
+            st_nomet   = leading_ak8jet_p4.Pt() + wbana_lep_p4.Pt();
             
             // define st_v2 obtained using ak4
             st_v2   = met_p4.Pt() + goodAK4Jets.at(0).getP4().Pt() + wbana_lep_p4.Pt();
-            
+
             // define mass obtained using ak8
             mass    = (met_p4 + leading_ak8jet_p4 + wbana_lep_p4).M();
             
@@ -510,6 +458,22 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
             
             // define dphi
             dphi = goodAK4Jets.at(0).getP4().DeltaPhi(wbana_lep_p4);
+
+            // define met-jet dphi
+            dphi_metjet = goodAK4Jets.at(0).getP4().DeltaPhi(met_p4);
+
+            // define met-lep dphi
+            dphi_metlep = wbana_lep_p4.DeltaPhi(met_p4);
+
+            TVector3 Mu_TV3(wbana_lep_p4.Px(), wbana_lep_p4.Py(), wbana_lep_p4.Pz());
+            TVector3 Jet_TV3(goodAK4Jets.at(0).getP4().Px(), goodAK4Jets.at(0).getP4().Py(), goodAK4Jets.at(0).getP4().Pz());
+            TVector3 Z_TV3(0, 0, 1);
+            TVector3 Met_TV3(met_p4.Px(), met_p4.Py(), 0);
+            TVector3 muZ = Z_TV3.Cross(Mu_TV3);
+            TVector3 muJet = Jet_TV3.Cross(Mu_TV3);
+            angle_MuZ_Jet = muZ.Angle(Jet_TV3);
+            angle_MuJet_Met = muJet.Angle(Met_TV3);
+	    //std::cout << "angle_MuZ_Jet: " << angle_MuZ_Jet << ", angle_MuJet_Met: " << angle_MuJet_Met << std::endl;
         }
         
 
@@ -531,6 +495,7 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
         
         // cutflows for the control and signal regions
         int cut_flow_ttbar   = cutFlow(ttbarSelection_);
+        int cut_flow_cr      = cutFlow(crSelection_);
         int cut_flow_wjet    = cutFlow(wjetSelection_);
         int cut_flow_signal  = cutFlow(signalSelection_);
         
@@ -559,7 +524,45 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_Massv2")]  -> Fill(mass_v2, evtwt);
                 h1_[name+string("_HT")]       -> Fill(htak4.getHT(), evtwt);
                 h1_[name+string("_NBTags")]   -> Fill(goodBTaggedAK4Jets.size(), evtwt);
+                h1_[name+string("_ST_nomet")]       -> Fill(st_nomet, evtwt) ;
+                h1_[name+string("_DPHI_MetJet")]       -> Fill(dphi_metjet, evtwt) ;
+                h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
+                h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
+                h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
+            }
+        }
+        
+
+        // cutflow for the alternative cr
+        if(goodBTaggedAK4Jets.size() >= 1){
+            for(int cut = 0; cut < cut_flow_cr; cut++){
                 
+                string name = string("cr_")+to_string(cut) + ch;
+                h1_[name+string("_MET")]    -> Fill(goodMet.at(0).getP4().Pt(), evtwt) ;
+                h1_[name+string("_MT")]     -> Fill(mt, evtwt) ;
+                h1_[name+string("_LepPt")]  -> Fill(wbana_lep_p4.Pt(), evtwt) ;
+                h1_[name+string("_LepEta")] -> Fill(wbana_lep_p4.Eta(), evtwt) ;
+                if(goodAK4Jets.size() > 0){
+                    h1_[name+string("_JetPt")]  -> Fill(goodAK4Jets.at(0).getP4().Pt(), evtwt) ;
+                    h1_[name+string("_JetEta")] -> Fill(goodAK4Jets.at(0).getP4().Eta(), evtwt) ;
+                    h1_[name+string("_DR")]     -> Fill(dr_ak4jet_lep, evtwt) ;
+                    h1_[name+string("_DPHI")]   -> Fill(dphi, evtwt) ;
+                    h1_[name+string("_FwdJetPt")]   -> Fill(fwd_ak4jet_p4.Pt(), evtwt) ;
+                    h1_[name+string("_FwdJetEta")]   -> Fill(fwd_ak4jet_p4.Eta(), evtwt) ;
+                }
+                
+                h1_[name+string("_NJets")]    -> Fill(goodAK4Jets.size(), evtwt) ;
+                h1_[name+string("_ST")]       -> Fill(st, evtwt) ;
+                h1_[name+string("_STv2")]    -> Fill(st_v2, evtwt) ;
+                h1_[name+string("_Mass")]     -> Fill(mass, evtwt) ;
+                h1_[name+string("_Massv2")]  -> Fill(mass_v2, evtwt);
+                h1_[name+string("_HT")]       -> Fill(htak4.getHT(), evtwt);
+                h1_[name+string("_NBTags")]   -> Fill(goodBTaggedAK4Jets.size(), evtwt);
+                h1_[name+string("_ST_nomet")]       -> Fill(st_nomet, evtwt) ;
+                h1_[name+string("_DPHI_MetJet")]       -> Fill(dphi_metjet, evtwt) ;
+                h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
+                h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
+                h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
             }
         }
         
@@ -598,6 +601,11 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_Massv2")]  -> Fill(mass_v2, evtwt);
                 h1_[name+string("_HT")]       -> Fill(htak4.getHT(), evtwt);
                 h1_[name+string("_NBTags")]   -> Fill(goodBTaggedAK4Jets.size(), evtwt);
+                h1_[name+string("_ST_nomet")]       -> Fill(st_nomet, evtwt) ;
+                h1_[name+string("_DPHI_MetJet")]       -> Fill(dphi_metjet, evtwt) ;
+                h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
+                h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
+                h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
             }
         }
 
@@ -630,6 +638,11 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_Massv2")]  -> Fill(mass_v2, evtwt);
                 h1_[name+string("_HT")]       -> Fill(htak4.getHT(), evtwt);
                 h1_[name+string("_NBTags")]   -> Fill(goodBTaggedAK4Jets.size(), evtwt);
+                h1_[name+string("_ST_nomet")]       -> Fill(st_nomet, evtwt) ;
+                h1_[name+string("_DPHI_MetJet")]       -> Fill(dphi_metjet, evtwt) ;
+                h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
+                h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
+                h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
                 
                 if(goodBTaggedAK4Jets.size() == 1){
                     h1_[name+string("_Mass1b")]     -> Fill(mass, evtwt) ;
@@ -797,6 +810,21 @@ void SingleLepAna::beginJob() {
             
             full_name = name+string("_NBTags");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 5, -0.5, 4.5);
+            
+            full_name = name+string("_ST_nomet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_DPHI_MetJet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_DPHI_MetLep");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+
+            full_name = name+string("_Angle_MuZ_Jet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_Angle_MuJet_Met");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
             
             full_name = name+string("_Mass1b")+string("_HT300");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
@@ -1029,6 +1057,105 @@ void SingleLepAna::beginJob() {
             
             full_name = name+string("_NBTags");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 5, -0.5, 4.5);
+
+            full_name = name+string("_ST_nomet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_DPHI_MetJet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_DPHI_MetLep");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+
+            full_name = name+string("_Angle_MuZ_Jet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_Angle_MuJet_Met");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+        }
+    }
+    
+    
+    for(int ch_i = 0; ch_i < 2; ch_i++){
+        for(int cut = 0; cut < 11; cut++){
+            
+            
+            string ch;
+            if(ch_i == 0)
+                ch = "_Mu";
+            else
+                ch = "_Ele";
+            
+            string name = string("cr_")+to_string(cut) + ch;
+            
+            full_name = name+string("_MET");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 1000);
+            
+            full_name = name+string("_MT");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 500);
+            
+            full_name = name+string("_LepPt");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 1000);
+            
+            full_name = name+string("_LepEta");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 120, -3, 3);
+            
+            full_name = name+string("_JetPt");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 200, 0, 2000);
+            
+            full_name = name+string("_JetEta");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_FwdJetPt");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 500);
+            
+            full_name = name+string("_FwdJetEta");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+
+            
+            full_name = name+string("_DR");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_DPHI");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_NJets");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 20, -0.5, 19.5);
+            
+            full_name = name+string("_ST");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_STv2");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mass");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Massv2");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_HT");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_NBTags");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 5, -0.5, 4.5);
+
+            full_name = name+string("_ST_nomet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_DPHI_MetJet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_DPHI_MetLep");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+
+            full_name = name+string("_Angle_MuZ_Jet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_Angle_MuJet_Met");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
         }
     }
     
@@ -1106,6 +1233,22 @@ void SingleLepAna::beginJob() {
             
             full_name = name+string("_NBTags");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 5, -0.5, 4.5);
+
+            full_name = name+string("_ST_nomet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_DPHI_MetJet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+            
+            full_name = name+string("_DPHI_MetLep");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -5, 5);
+
+            full_name = name+string("_Angle_MuZ_Jet");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_Angle_MuJet_Met");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
         }
     }
     //LQ Histograms
@@ -1264,10 +1407,10 @@ int SingleLepAna::cutFlow(const edm::ParameterSet & pars){
          leading_ak4jet_bdisc <= max_bdisc ) )     return 6;
     if(!(fabs( dphi ) >= min_dphi &&
          fabs( dphi ) <= max_dphi) )              return 7;
-    if(fabs( fwd_ak4jet_p4.Eta() ) < fwd_jet_eta) return 8;
     if(!(fabs( dr_ak4jet_lep ) >= min_dr &&
-         fabs( dr_ak4jet_lep ) <= max_dr))        return 9;
-    if( st < min_st)                              return 10;
+         fabs( dr_ak4jet_lep ) <= max_dr))        return 8;
+    if( st < min_st)                              return 9;
+    if(fabs(fwd_ak4jet_p4.Eta()) < fwd_jet_eta) return 10;
     
     return 11;
 }

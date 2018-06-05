@@ -19,11 +19,9 @@ defaultAK4JetSelectionParameters = cms.PSet(
     jecAK8GroomedPayloadNames = cms.vstring(), 
     jecShift                  = cms.double(0), 
     jerShift                  = cms.int32(0), 
-    jetPtMin                  = cms.double(20),
-    #jetPtMin                  = cms.double(30),
+    jetPtMin                  = cms.double(30),
     jetPtMax                  = cms.double(1000000),
-    jetAbsEtaMax              = cms.double(3.0),
-    #jetAbsEtaMax              = cms.double(5.0),
+    jetAbsEtaMax              = cms.double(5.0),
     jetCSVDiscMin             = cms.double(-10000),
     jetCSVDiscMax             = cms.double(10000),
     btaggedcsvlOP             = cms.double(CSVv2L) , 
@@ -32,11 +30,10 @@ defaultAK4JetSelectionParameters = cms.PSet(
     )
 
 defaultBTaggedAK4JetSelectionParameters = defaultAK4JetSelectionParameters.clone(
-    jetPtMin            = cms.double(20),
-    #jetPtMin            = cms.double(30),?
+    jetPtMin            = cms.double(30),
     jetAbsEtaMax        = cms.double(2.4),
-    jetCSVDiscMin       = cms.double(CSVv2T),
-    #jetCSVDiscMin       = cms.double(CSVv2M),
+    #jetCSVDiscMin       = cms.double(CSVv2T),
+    jetCSVDiscMin       = cms.double(CSVv2M),
     )
 
 defaultAK8JetSelectionParameters = defaultAK4JetSelectionParameters.clone( 

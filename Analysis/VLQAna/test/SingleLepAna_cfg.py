@@ -65,7 +65,7 @@ options.register('jecShift', False,
                  VarParsing.varType.bool,
                  "Apply w+jet ht correction to w+jet MC"
                  )
-options.register('jerShift', True,
+options.register('jerShift', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
                  "Apply w+jet ht correction to w+jet MC"
@@ -91,7 +91,7 @@ options.register('doSkim', False,
                  VarParsing.varType.bool,
                  "Produce skim 1 or 0"
                  )
-options.register('sys', True,
+options.register('sys', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
                  "Do systematics"
@@ -108,13 +108,14 @@ print options
 dataPath = ''
 
 hltpaths_mu = [
-	       #"HLT_IsoMu24_v",
-               #"HLT_IsoTkMu24_v",
-               "HLT_Mu50_v",
+	       "HLT_IsoMu24_v",
+               "HLT_IsoTkMu24_v",
+               #"HLT_Mu50_v",
+               #"HLT_TkMu50_v",
                ]
 hltpaths_ele = [
-                #"HLT_Ele27_eta2p1_WPLoose_Gsf_v",
-                #"HLT_Ele27_eta2p1_WPTight_Gsf_v",
+                "HLT_Ele27_eta2p1_WPLoose_Gsf_v",
+                "HLT_Ele27_eta2p1_WPTight_Gsf_v",
 		"HLT_Ele32_eta2p1_WPTight_Gsf_v",
                 ]
 
@@ -140,7 +141,8 @@ process.source = cms.Source(
                             "PoolSource",
                             fileNames = cms.untracked.vstring(
                                                               
-'/store/group/phys_b2g/B2GAnaFW_80X_V2p4/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4/161222_110143/0000/B2GEDMNtuple_1.root',
+#'/store/group/phys_b2g/B2GAnaFW_80X_V2p4/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1_B2GAnaFW_80X_V2p4/161222_110143/0000/B2GEDMNtuple_1.root',
+'file:/afs/cern.ch/work/a/amodak/public/VLQ/B2G/Production/CMSSW_8_0_26_patch1/src/Analysis/B2GAnaFW/test/B2GEDMNtuple.root',
                                )
                             )
 
@@ -193,8 +195,8 @@ process.ana.elIdSFsParams.elrecosfmap = cms.string(os.path.join(dataPath,"egamma
 process.ana.elTrigSFsParams.eltrigsfmap = cms.string(os.path.join(dataPath,"SF_HLT_Ele32_eta2p1.root"))
 
 #process.ana.BoostedZCandParams.ptMin = cms.double(150.)#not used in analysis
-#process.ana.jetAK8selParams.jetPtMin = cms.double(200)
-#process.ana.jetAK4BTaggedselParams.jetPtMin = cms.double(50)
+process.ana.jetAK8selParams.jetPtMin = cms.double(200)
+process.ana.jetAK4BTaggedselParams.jetPtMin = cms.double(50)
 process.ana.STMin = cms.double(1000.)
 process.ana.vlqMass = cms.double(1200.) #M=1000
 process.ana.bosonMass = cms.double(91.2) #Z
