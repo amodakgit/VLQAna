@@ -76,6 +76,7 @@ config.section_("Data")
 config.Data.inputDataset = DUMMY_DATASET
 config.Data.inputDBS = 'phys03'
 config.Data.splitting = DUMMY_BASE
+#config.Data.splitting = 'Automatic'
 config.Data.unitsPerJob = DUMMY_NUMBER
 config.Data.ignoreLocality = False
 config.Data.publication = False
