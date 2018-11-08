@@ -52,6 +52,11 @@
 #include "Analysis/VLQAna/interface/MassReco.h"
 #include "Analysis/VLQAna/interface/BTagSFUtils.h"
 
+#include "Analysis/VLQAna/interface/MVASkim.h"
+#include "TMVA/Factory.h"
+#include "TMVA/Tools.h"
+#include "TMVA/Reader.h"
+
 #include <TFile.h>
 #include <TF1.h>
 #include <TH1D.h>
@@ -70,7 +75,10 @@ public:
     int cutFlow(const edm::ParameterSet & param);
     int hltDecision(const edm::ParameterSet & param);
     void printing(std::string str){std::cout << str<<"\n";}
-    
+    MVASkim* _skimObjTTJet;
+    MVASkim* _skimObjWJet;
+    MVASkim* _skimObjSig;
+
 private:
     virtual void beginJob() override;
     virtual bool filter(edm::Event&, const edm::EventSetup&) override;
@@ -363,11 +371,12 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
             ch = "_Ele";
             
             const bool hltdecision(*h_hltdecision_ele.product()) ;
-            if ( !hltdecision && (*h_evttype.product()) != "EvtType_MC" ) return false;
+            if ( !hltdecision ) return false;
+            //if ( !hltdecision && (*h_evttype.product()) != "EvtType_MC" ) return false;
 
             if((*h_evttype.product()) == "EvtType_MC" && applyLeptonIDSFs_){
                 evtwt *= elidsf.IDSF(signalElectrons.at(0).getPt(),signalElectrons.at(0).getscEta());
-                evtwt *= elidsf.RECOSF(signalElectrons.at(0).getPt(),signalElectrons.at(0).getscEta());
+                //evtwt *= elidsf.RECOSF(signalElectrons.at(0).getPt(),signalElectrons.at(0).getscEta());
             }
             if((*h_evttype.product()) == "EvtType_MC" && applyLeptonTrigSFs_){
                 evtwt *= eltrigsf(signalElectrons.at(0).getPt(),signalElectrons.at(0).getscEta());
@@ -381,7 +390,8 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
             // ignor muon events with pt > 500 GeV (keep this untill we know that the trigger works)
             //if(wbana_lep_p4.Pt() > 500) return false;
 
-            if ( !hltdecision && (*h_evttype.product()) != "EvtType_MC") return false;
+            //if ( !hltdecision && (*h_evttype.product()) != "EvtType_MC") return false;
+            if ( !hltdecision ) return false;
 
             if((*h_evttype.product()) == "EvtType_MC" && applyLeptonIDSFs_){
                 evtwt *= muidsf.IDSF(signalMuons.at(0).getPt(),signalMuons.at(0).getEta());
@@ -438,7 +448,7 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
         TLorentzVector met_p4 = goodMet.at(0).getP4();
         double mt = TMath::Sqrt( 2*wbana_lep_p4.Pt() * met_p4.Pt() * ( 1 - TMath::Cos(wbana_lep_p4.DeltaPhi(met_p4) ) ) );
         
-        double st = 0, st_v2 = 0, st_nomet = 0, mass = 0, mass_v2 = 0, dphi = 999, dphi_metjet= 999, dphi_metlep = 999, angle_MuZ_Jet = 999, angle_MuJet_Met = 999;
+        double st = 0, st_v2 = 0, st_nomet = 0, mass = 0, mass_v2 = 0, dphi = 999, dphi_metjet= 999, dphi_metlep = 999, angle_MuZ_Jet = 999, angle_MuJet_Met = 999, ht_nolead = 0, bVsW_ratio = -1, mass_lb = 0, mass_lb_v2 = 0, bVsL_ratio = -1, ext_jet_pt = 0;
         if(goodAK4Jets.size() > 0){
             
             // define st obtained using ak8
@@ -474,8 +484,20 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
             angle_MuZ_Jet = muZ.Angle(Jet_TV3);
             angle_MuJet_Met = muJet.Angle(Met_TV3);
 	    //std::cout << "angle_MuZ_Jet: " << angle_MuZ_Jet << ", angle_MuJet_Met: " << angle_MuJet_Met << std::endl;
+            ht_nolead = htak4.getHT() - goodAK4Jets.at(0).getP4().Pt();
+            bVsW_ratio = (double) (goodAK4Jets.at(0).getP4().Pt()/(wbana_lep_p4.Pt() + met_p4.Pt()));
+            bVsL_ratio = (double) (goodAK4Jets.at(0).getP4().Pt()/wbana_lep_p4.Pt());
+            // define mass obtained using ak8
+            mass_lb    = (leading_ak8jet_p4 + wbana_lep_p4).M();
+            // define mass obtained using ak4
+            mass_lb_v2 = (goodAK4Jets.at(0).getP4() + wbana_lep_p4).M();
+
+            for (unsigned int jet = 0; jet < goodAK4Jets.size(); jet++) {
+              if (jet == 0) continue;
+              TVector3 Jet(goodAK4Jets.at(jet).getP4().Px(), goodAK4Jets.at(jet).getP4().Py(), goodAK4Jets.at(jet).getP4().Pz());
+              ext_jet_pt += fabs (muJet.Unit().Dot(Jet));
+            }            
         }
-        
 
         //Histograms for b-tag efficiency map, after a preselection
         if (goodAK4Jets.size() > 0){
@@ -529,6 +551,67 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
                 h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
                 h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
+
+                //Filling variables for MVASkim
+                if (_skimObjTTJet && cut == 6){
+		  TreeVariables varList;
+                  if (signalMuons.size() == 1){
+		    varList.lepEta_Mu           = wbana_lep_p4.Eta();
+		    varList.lepPt_Mu            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Mu           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Mu       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Mu        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Mu       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Mu              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Mu               = st;
+                    varList.HT_Mu               = htak4.getHT();
+                    varList.NBTags_Mu           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Mu            = goodAK4Jets.size();
+                    varList.Mass_Mu             = mass;
+                    varList.DPHI_LepJet_Mu      = dphi;
+                    varList.DPHI_MetLep_Mu      = dphi_metlep;
+                    varList.FwdJetEta_Mu        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Mu         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Mu        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Mu               = mt;
+                    varList.DR_LepCloJet_Mu     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Mu       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Mu  = ext_jet_pt;
+                    varList.HTNoLead_Mu         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Mu    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Mu  = angle_MuJet_Met;
+                    varList.Evtwt_Mu            = evtwt;
+                  }
+                  else if (signalElectrons.size() == 1){
+		    varList.lepEta_Ele           = wbana_lep_p4.Eta();
+		    varList.lepPt_Ele            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Ele           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Ele       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Ele        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Ele       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Ele              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Ele               = st;
+                    varList.HT_Ele               = htak4.getHT();
+                    varList.NBTags_Ele           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Ele            = goodAK4Jets.size();
+                    varList.Mass_Ele             = mass;
+                    varList.DPHI_LepJet_Ele      = dphi;
+                    varList.DPHI_MetLep_Ele      = dphi_metlep;
+                    varList.FwdJetEta_Ele        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Ele         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Ele        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Ele               = mt;
+                    varList.DR_LepCloJet_Ele     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Ele       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Ele  = ext_jet_pt;
+                    varList.HTNoLead_Ele         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Ele    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Ele  = angle_MuJet_Met;
+                    varList.Evtwt_Ele            = evtwt;
+                  }
+
+                  _skimObjTTJet->fill(varList);
+                }
             }
         }
         
@@ -606,12 +689,73 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_DPHI_MetLep")]       -> Fill(dphi_metlep, evtwt) ;
                 h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
                 h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
+
+                //Filling variables for MVASkim
+                if (_skimObjWJet && cut == 6){
+		  TreeVariables varList;
+                  if (signalMuons.size() == 1){
+		    varList.lepEta_Mu           = wbana_lep_p4.Eta();
+		    varList.lepPt_Mu            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Mu           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Mu       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Mu        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Mu       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Mu              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Mu               = st;
+                    varList.HT_Mu               = htak4.getHT();
+                    varList.NBTags_Mu           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Mu            = goodAK4Jets.size();
+                    varList.Mass_Mu             = mass;
+                    varList.DPHI_LepJet_Mu      = dphi;
+                    varList.DPHI_MetLep_Mu      = dphi_metlep;
+                    varList.FwdJetEta_Mu        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Mu         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Mu        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Mu               = mt;
+                    varList.DR_LepCloJet_Mu     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Mu       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Mu  = ext_jet_pt;
+                    varList.HTNoLead_Mu         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Mu    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Mu  = angle_MuJet_Met;
+                    varList.Evtwt_Mu            = evtwt;
+                  }
+                  else if (signalElectrons.size() == 1){
+		    varList.lepEta_Ele           = wbana_lep_p4.Eta();
+		    varList.lepPt_Ele            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Ele           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Ele       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Ele        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Ele       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Ele              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Ele               = st;
+                    varList.HT_Ele               = htak4.getHT();
+                    varList.NBTags_Ele           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Ele            = goodAK4Jets.size();
+                    varList.Mass_Ele             = mass;
+                    varList.DPHI_LepJet_Ele      = dphi;
+                    varList.DPHI_MetLep_Ele      = dphi_metlep;
+                    varList.FwdJetEta_Ele        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Ele         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Ele        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Ele               = mt;
+                    varList.DR_LepCloJet_Ele     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Ele       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Ele  = ext_jet_pt;
+                    varList.HTNoLead_Ele         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Ele    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Ele  = angle_MuJet_Met;
+                    varList.Evtwt_Ele            = evtwt;
+                  }
+
+                  _skimObjWJet->fill(varList);
+                }
             }
         }
 
         // cutflow for the signal region
         
-        if(htak4.getHT() > 300){
+        if(htak4.getHT() > 400){
             for(int cut = 0; cut < cut_flow_signal; cut++){
                 
                 string name = string("signal_")+to_string(cut) + ch;
@@ -644,9 +788,18 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 h1_[name+string("_Angle_MuZ_Jet")]       -> Fill(angle_MuZ_Jet, evtwt) ;
                 h1_[name+string("_Angle_MuJet_Met")]       -> Fill(angle_MuJet_Met, evtwt) ;
                 
+                h1_[name+string("_HT_NoLead")]       -> Fill(ht_nolead, evtwt) ;
+                h1_[name+string("_bVsW_Ratio")]       -> Fill(bVsW_ratio, evtwt) ;
+                h1_[name+string("_bVsL_Ratio")]       -> Fill(bVsL_ratio, evtwt) ;
+                h1_[name+string("_Mlb")]       -> Fill(mass_lb, evtwt) ;
+                h1_[name+string("_Mlbv2")]       -> Fill(mass_lb_v2, evtwt) ;
+                h1_[name+string("_Ext_Jet_TransPt")]       -> Fill(ext_jet_pt, evtwt) ;
+
                 if(goodBTaggedAK4Jets.size() == 1){
                     h1_[name+string("_Mass1b")]     -> Fill(mass, evtwt) ;
                     h1_[name+string("_ST1b")]       -> Fill(st, evtwt) ;
+                    h1_[name+string("_Mlb1b")]       -> Fill(mass_lb, evtwt) ;
+                    h1_[name+string("_Mlbv21b")]       -> Fill(mass_lb_v2, evtwt) ;
                     if (htak4.getHT() > 300) h1_[name+string("_Mass1b")+string("_HT300")]     -> Fill(mass, evtwt) ;
                     if (htak4.getHT() > 350) h1_[name+string("_Mass1b")+string("_HT350")]     -> Fill(mass, evtwt) ;
                     if (htak4.getHT() > 400) h1_[name+string("_Mass1b")+string("_HT400")]     -> Fill(mass, evtwt) ;
@@ -679,6 +832,8 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                 if(goodBTaggedAK4Jets.size() > 1){
                     h1_[name+string("_Mass2b")]     -> Fill(mass, evtwt) ;
                     h1_[name+string("_ST2b")]       -> Fill(st, evtwt) ;
+                    h1_[name+string("_Mlb2b")]       -> Fill(mass_lb, evtwt) ;
+                    h1_[name+string("_Mlbv22b")]       -> Fill(mass_lb_v2, evtwt) ;
                     if (htak4.getHT() > 300) h1_[name+string("_Mass2b")+string("_HT300")]     -> Fill(mass, evtwt) ;
                     if (htak4.getHT() > 350) h1_[name+string("_Mass2b")+string("_HT350")]     -> Fill(mass, evtwt) ;
                     if (htak4.getHT() > 400) h1_[name+string("_Mass2b")+string("_HT400")]     -> Fill(mass, evtwt) ;
@@ -708,6 +863,80 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
                     if (st > 900) h1_[name+string("_Mass2b")+string("_ST900")]     -> Fill(mass, evtwt) ;
                     if (st > 950) h1_[name+string("_Mass2b")+string("_ST950")]     -> Fill(mass, evtwt) ;
                 }
+
+                //Electron ID Properties:
+                if (signalElectrons.size() == 1 && signalElectrons.at(0).getP4().Pt() > 350) {
+                  h1_[name+string("_dEtaIn")]     -> Fill(signalElectrons.at(0).getdEtaIn(), evtwt) ;
+                  h1_[name+string("_dPhiIn")]     -> Fill(signalElectrons.at(0).getdPhiIn(), evtwt) ;
+                  h1_[name+string("_full5x5siee")]     -> Fill(signalElectrons.at(0).getfull5x5siee(), evtwt) ;
+                  h1_[name+string("_HoE")]     -> Fill(signalElectrons.at(0).getHoE(), evtwt) ;
+                  h1_[name+string("_D0")]     -> Fill(signalElectrons.at(0).getD0(), evtwt) ;
+                  h1_[name+string("_Dz")]     -> Fill(signalElectrons.at(0).getDz(), evtwt) ;
+                  h1_[name+string("_ooEmooP")]     -> Fill(signalElectrons.at(0).getooEmooP(), evtwt) ;
+                  h1_[name+string("_Iso03")]     -> Fill(signalElectrons.at(0).getIso03(), evtwt) ;
+                  h1_[name+string("_missHits")]     -> Fill(signalElectrons.at(0).getmissHits(), evtwt) ;
+                  h1_[name+string("_hasMatchedConVeto")]     -> Fill(signalElectrons.at(0).gethasMatchedConVeto(), evtwt) ;
+                }
+               //Filling variables for MVASkim
+                if (_skimObjSig && cut == 6){
+		  TreeVariables varList;
+                  if (signalMuons.size() == 1){
+		    varList.lepEta_Mu           = wbana_lep_p4.Eta();
+		    varList.lepPt_Mu            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Mu           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Mu       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Mu        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Mu       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Mu              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Mu               = st;
+                    varList.HT_Mu               = htak4.getHT();
+                    varList.NBTags_Mu           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Mu            = goodAK4Jets.size();
+                    varList.Mass_Mu             = mass;
+                    varList.DPHI_LepJet_Mu      = dphi;
+                    varList.DPHI_MetLep_Mu      = dphi_metlep;
+                    varList.FwdJetEta_Mu        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Mu         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Mu        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Mu               = mt;
+                    varList.DR_LepCloJet_Mu     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Mu       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Mu  = ext_jet_pt;
+                    varList.HTNoLead_Mu         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Mu    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Mu  = angle_MuJet_Met;
+                    varList.Evtwt_Mu            = evtwt;
+                  }
+                  else if (signalElectrons.size() == 1){
+		    varList.lepEta_Ele           = wbana_lep_p4.Eta();
+		    varList.lepPt_Ele            = wbana_lep_p4.Pt();
+		    varList.lepPhi_Ele           = wbana_lep_p4.Phi();
+		    varList.leadJetEta_Ele       = goodAK4Jets.at(0).getP4().Eta();
+		    varList.leadJetPt_Ele        = goodAK4Jets.at(0).getP4().Pt();
+		    varList.leadJetPhi_Ele       = goodAK4Jets.at(0).getP4().Phi();
+                    varList.met_Ele              = goodMet.at(0).getP4().Pt();
+                    varList.ST_Ele               = st;
+                    varList.HT_Ele               = htak4.getHT();
+                    varList.NBTags_Ele           = goodBTaggedAK4Jets.size();
+                    varList.NJets_Ele            = goodAK4Jets.size();
+                    varList.Mass_Ele             = mass;
+                    varList.DPHI_LepJet_Ele      = dphi;
+                    varList.DPHI_MetLep_Ele      = dphi_metlep;
+                    varList.FwdJetEta_Ele        = fwd_ak4jet_p4.Eta();
+                    varList.FwdJetPt_Ele         = fwd_ak4jet_p4.Pt();
+                    varList.FwdJetPhi_Ele        = fwd_ak4jet_p4.Phi();
+                    varList.MT_Ele               = mt;
+                    varList.DR_LepCloJet_Ele     = dr_ak4jet_lep;
+                    varList.bVsW_ratio_Ele       = bVsW_ratio;
+                    varList.Ext_Jet_TransPt_Ele  = ext_jet_pt;
+                    varList.HTNoLead_Ele         = ht_nolead;
+                    varList.Angle_MuZ_Jet_Ele    = angle_MuZ_Jet;
+                    varList.Angle_MuJet_Met_Ele  = angle_MuJet_Met;
+                    varList.Evtwt_Ele            = evtwt;
+                  }
+
+                  _skimObjSig->fill(varList);
+                }
             }
         }
     }
@@ -718,7 +947,11 @@ bool SingleLepAna::filter(edm::Event& evt, const edm::EventSetup& iSetup) {
 
 // ------------ method called once each job just before starting event loop  ------------
 void SingleLepAna::beginJob() {
-    
+
+    _skimObjTTJet = new MVASkim("MVASkim_TTJetRegion");    
+    _skimObjWJet  = new MVASkim("MVASkim_WJetRegion");    
+    _skimObjSig   = new MVASkim("MVASkim_SignalRegion");    
+
     h1_["truePU"] = fs->make<TH1D>("truePU", "truePU", 51, -0.5, 50.5);
     h1_["nPU"] = fs->make<TH1D>("nPU", "nPU", 51, -0.5, 50.5);
     
@@ -734,7 +967,7 @@ void SingleLepAna::beginJob() {
     string full_name;
     
     for(int ch_i = 0; ch_i < 2; ch_i++){
-        for(int cut = 0; cut < 11; cut++){
+        for(int cut = 0; cut < 13; cut++){
             
             
             string ch;
@@ -825,6 +1058,36 @@ void SingleLepAna::beginJob() {
             
             full_name = name+string("_Angle_MuJet_Met");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 5);
+            
+            full_name = name+string("_HT_NoLead");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_bVsW_Ratio");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 200, -10, 10);
+            
+            full_name = name+string("_bVsL_Ratio");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 200, -10, 10);
+            
+            full_name = name+string("_Mlb");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mlbv2");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mlb1b");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mlbv21b");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mlb2b");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Mlbv22b");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
+            
+            full_name = name+string("_Ext_Jet_TransPt");
+            h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 200, 0, 2000);
             
             full_name = name+string("_Mass1b")+string("_HT300");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
@@ -990,12 +1253,34 @@ void SingleLepAna::beginJob() {
             full_name = name+string("_Mass2b")+string("_ST950");
             h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 300, 0, 3000);
 
+            if (ch_i == 1){
+              full_name = name+string("_dEtaIn");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 0.02);
+              full_name = name+string("_dPhiIn");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 0.02);
+              full_name = name+string("_full5x5siee");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 500, 0, 0.05);
+              full_name = name+string("_HoE");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 200, 0, 0.2);
+              full_name = name+string("_D0");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -0.05, 0.05);
+              full_name = name+string("_Dz");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, -0.05, 0.05);
+              full_name = name+string("_ooEmooP");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 500, 0, 0.05);
+              full_name = name+string("_Iso03");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 100, 0, 0.1);
+              full_name = name+string("_missHits");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 5, 0, 5);
+              full_name = name+string("_hasMatchedConVeto");
+              h1_[full_name]  =  fs->make<TH1D>(full_name.c_str(), full_name.c_str(), 3, 0, 3);
+            }
         }
     }
     
     
     for(int ch_i = 0; ch_i < 2; ch_i++){
-        for(int cut = 0; cut < 11; cut++){
+        for(int cut = 0; cut < 13; cut++){
             
             
             string ch;
@@ -1078,7 +1363,7 @@ void SingleLepAna::beginJob() {
     
     
     for(int ch_i = 0; ch_i < 2; ch_i++){
-        for(int cut = 0; cut < 11; cut++){
+        for(int cut = 0; cut < 13; cut++){
             
             
             string ch;
@@ -1162,7 +1447,7 @@ void SingleLepAna::beginJob() {
     
     
     for(int ch_i = 0; ch_i < 2; ch_i++){
-        for(int cut = 0; cut < 11; cut++){
+        for(int cut = 0; cut < 13; cut++){
             
             
             string ch;
@@ -1348,7 +1633,8 @@ int SingleLepAna::cutFlow(const edm::ParameterSet & pars){
     double max_dphi     = pars.getParameter<double>("max_dphi");
     double fwd_jet_eta  = pars.getParameter<double>("fwd_jet_eta");
     double min_st       = pars.getParameter<double>("min_st");
-    
+    double max_MetLep_dphi = pars.getParameter<double>("max_MetLep_dphi");
+    double max_pTBalance = pars.getParameter<double>("max_pTBalance");
     
     TLorentzVector lep_p4;
     if(signalElectrons.size() == 1){
@@ -1394,8 +1680,14 @@ int SingleLepAna::cutFlow(const edm::ParameterSet & pars){
             fwd_ak4jet_p4  = jet_p4;
         }
     }
-    
-    
+        
+    double dphi_metlep = 999, bVsW_ratio = 999;
+    if(goodAK4Jets.size() > 0){
+        // define met-lep dphi
+        dphi_metlep = lep_p4.DeltaPhi(met_p4);
+        //pT balance
+        bVsW_ratio = (double) (leading_ak4jet_p4.Pt()/(lep_p4.Pt() + met_p4.Pt()));
+    }
     
     if(lep_p4.Pt() < lep_pt         &&
        fabs( lep_p4.Eta() ) > lep_eta)            return 1;
@@ -1404,15 +1696,17 @@ int SingleLepAna::cutFlow(const edm::ParameterSet & pars){
     if(leading_ak4jet_p4.Pt() < jet_pt)           return 4;
     if(fabs( leading_ak4jet_p4.Eta() ) > jet_eta) return 5;
     if(!(leading_ak4jet_bdisc >= min_bdisc &&
-         leading_ak4jet_bdisc <= max_bdisc ) )     return 6;
+         leading_ak4jet_bdisc <= max_bdisc ) )    return 6;
     if(!(fabs( dphi ) >= min_dphi &&
          fabs( dphi ) <= max_dphi) )              return 7;
     if(!(fabs( dr_ak4jet_lep ) >= min_dr &&
          fabs( dr_ak4jet_lep ) <= max_dr))        return 8;
     if( st < min_st)                              return 9;
-    if(fabs(fwd_ak4jet_p4.Eta()) < fwd_jet_eta) return 10;
+    if(fabs(fwd_ak4jet_p4.Eta()) < fwd_jet_eta)   return 10;
+    if(fabs(dphi_metlep) > max_MetLep_dphi)       return 11;
+    if(fabs(bVsW_ratio) > max_pTBalance)          return 12;
     
-    return 11;
+    return 13;
 }
 
 double SingleLepAna::getWjetHTRewSF(double ht, double ht_low_threshold){
@@ -1422,7 +1716,9 @@ double SingleLepAna::getWjetHTRewSF(double ht, double ht_low_threshold){
 }
 
 void SingleLepAna::endJob() {
-    
+  //if (_skimObjTTJet) _skimObjTTJet->close();
+  //if (_skimObjWJet)  _skimObjWJet->close();
+  //if (_skimObjSig)   _skimObjSig->close();
     return ;
 }
 
